@@ -13,12 +13,16 @@ const routes = [
     name: 'home',
     component: Home,
     redirect: '/login',
+    meta: {
+      showTabBar: false,//该路由显示tabBar
+    },
   }, {
     path: '/home',
     name: 'home',
     component: Home,
     meta: {
       requireAuth: true,  // 该路由项需要权限校验
+      showTabBar: true,//该路由显示tabBar
     },
   }, {
     path: '/my',
@@ -26,12 +30,16 @@ const routes = [
     component: My,
     meta: {
       requireAuth: true,  // 该路由项需要权限校验
+      showTabBar: true,//该路由显示tabBar
+
     },
   }, {
     path: '/edit',
     name: 'edit',
     component: Edit, meta: {
       requireAuth: true,  // 该路由项需要权限校验
+      showTabBar: true,//该路由显示tabBar
+
     },
   },
   {

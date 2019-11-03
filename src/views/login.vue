@@ -1,6 +1,6 @@
 <template>
   <div>
-    <van-row type="flex" class="padding" justify="center">记事本-登录</van-row>
+    <van-row type="flex" class="padding topBg" justify="center">记事本-登录</van-row>
     <div class="margin-top">
       <van-cell-group>
         <van-field
@@ -10,7 +10,13 @@
           placeholder="登录邮箱,没有会自动注册哦"
           :error-message="errMsg"
         />
-        <van-field v-model="password" type="password" label="登录密码" placeholder="请输入密码" />
+        <van-field
+          v-model="password"
+          type="password"
+          maxlength="12"
+          label="登录密码"
+          placeholder="请输入密码"
+        />
       </van-cell-group>
 
       <van-row type="flex" class="padding" justify="center">
@@ -22,10 +28,11 @@
 </template>
 <script>
 import Vue from "vue";
-import { Field, Cell, CellGroup, Toast } from "vant";
+import { Field, Cell, CellGroup, Toast, Notify } from "vant";
 Vue.use(Field)
   .use(Cell)
   .use(CellGroup)
+  .use(Notify)
   .use(Toast);
 
 export default {
@@ -45,15 +52,34 @@ export default {
     toLogin() {
       //@TODO 服务器登录
       //   Toast("输入错误");
-
-      if (this.email && this.password && this.errMsg !== "") {
-        this.$router.push("/home");
+      var reg = /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/;
+      if (this.password.length < 6) {
+        Toast("密码最短为6位数");
+        return;
+      }
+      if (this.password && reg.test(this.email)) {
+        this.axios
+          .post("/api/login", {
+            email: this.email,
+            password: this.password
+          })
+          .then(res => {
+            if (res.data.code === 200 || res.data.code === 201) {
+              console.log(res.data);
+              this.$global.user = res.data.data;
+              Notify({ type: "success", message: res.data.data.message });
+              this.$router.push("/edit");
+            } else {
+              Notify({ type: "danger", message: res.data.data.message });
+            }
+          });
       } else {
-        this.Toast("输入错误");
+        Toast("请检查输入邮箱是否有误");
       }
     },
+
     toFindpassword() {
-      Toast("找回密码");
+      Toast("请联系网站管理员找回密码");
     }
   },
   data() {
@@ -67,10 +93,6 @@ export default {
 };
 </script>
 <style scoped>
-.padding {
-  padding: 20px;
-}
-
 .margin-right {
   margin-right: 20px;
 }

@@ -1,8 +1,8 @@
 import Vue from 'vue'
-import './plugins/axios'
 import App from './App.vue'
 import router from './router'
 import 'vant/lib/index.css';
+import './plugins/axios'
 
 import { Button, Row, Col, Cell, CellGroup, Icon, Field, AddressEdit, Toast, Tag } from 'vant'
 
