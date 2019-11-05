@@ -24,23 +24,17 @@
 
     <!-- 每个元素的两侧间隔相等 -->
     <van-row type="flex" justify="space-around">
-      <van-col span="8">
-        <van-button type="default" size="small">保存至:我的记事本</van-button>
+      <van-col>
+        <van-button type="default" size="small" @click="showAction">保存至:{{savePath}}</van-button>
       </van-col>
-      <van-col span="8">
-        <van-button type="primary" size="small">添加图片/视频</van-button>
+      <van-col>
+        <van-button type="info" size="small">添加图片/视频</van-button>
+      </van-col>
+      <van-col>
+        <van-button type="primary" size="small" @click="conformSave">确定保存</van-button>
       </van-col>
     </van-row>
-
-    <!-- <div class="operator">
-      <van-button type="default" size="small">保存至:我的记事本</van-button>
-
-      <van-button type="primary" size="small">添加标签</van-button>
-
-      <van-icon @click="showAction" class="add-btn" size="40px" color="#409EFF" name="add-o" />
-    </div>
-
-    <van-action-sheet v-model="show" :actions="actions" cancel-text="取消" @cancel="onCancel" />-->
+    <van-action-sheet v-model="show" :actions="actions" @select="onSelect" />
   </div>
 </template>
 
@@ -48,8 +42,10 @@
 <script>
 import Vue from "vue";
 
-import { Toast, ActionSheet } from "vant";
-Vue.use(Toast).use(ActionSheet);
+import { Toast, ActionSheet, Notify } from "vant";
+Vue.use(Toast)
+  .use(ActionSheet)
+  .use(Toast);
 
 export default {
   watch: {
@@ -72,17 +68,52 @@ export default {
       title: "",
       message: "",
       tagList: [],
+      savePath: "我的记事本",
       tagString: undefined,
       show: false,
-      actions: [{ name: "图片" }, { name: "视频" }]
+      actions: [
+        { name: "我的记事本" },
+        { name: "选项" },
+        { name: "选项", subname: "描述信息" }
+      ]
     };
   },
 
   methods: {
-    onCancel() {
-      this.show = false;
-      Toast("cancel");
+    conformSave() {
+      var title = this.title;
+      var text = this.text;
+      var tags = this.tagList;
+      var folder = "folder";
+      var body = {
+        title: title,
+        email: this.$global.user.email,
+        tags: tags,
+        folder: folder
+      };
+      console.log(title);
+      console.log(text);
+      console.log(tags);
+      this.axios
+        .post("/api/addnote", {
+          body: body
+        })
+        .then(res => {
+          if (res.data.code === 200 || res.data.code === 201) {
+            console.log(res.data);
+            Notify({ type: "success", message: res.data.data.message });
+          } else {
+            Notify({ type: "danger", message: res.data.data.message });
+          }
+        });
     },
+
+    onSelect(item) {
+      this.show = false;
+      this.savePath = item.name;
+      Toast(item.name);
+    },
+
     showAction() {
       this.show = true;
     }
@@ -102,5 +133,11 @@ export default {
   flex-direction: row;
   flex-wrap: wrap;
   margin-bottom: 6px;
+}
+
+.row-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
