@@ -4,6 +4,7 @@ import Home from '../views/Home.vue'
 import Login from '../views/login.vue'
 import My from '../views/my.vue'
 import Edit from '../views/edit.vue'
+import feedBack from '../views/feedBack.vue'
 
 Vue.use(VueRouter)
 
@@ -49,6 +50,18 @@ const routes = [
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
     component: Login,
+  },
+  {
+    path: '/feedback',
+    name: 'feedBack',
+    // route level code-splitting
+    // this generates a separate chunk (about.[hash].js) for this route
+    // which is lazy-loaded when the route is visited.
+    component: feedBack,
+    meta: {
+      requireAuth: true,  // 该路由项需要权限校验
+      showTabBar: false,//该路由显示tabBar
+    },
   }
 ]
 

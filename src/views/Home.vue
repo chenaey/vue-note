@@ -34,13 +34,13 @@
       </van-collapse-item>
     </van-collapse>
     <van-popup v-model="show" class="model">
-      <van-field v-model="newFolderName" maxlength="10" label="文件夹" placeholder="输入文件夹名称" />
-      <van-button type="primary" size="small" @click="conformAddFolder">确定创建</van-button>
+      <van-field v-model="newFolderName" maxlength="10" label="创建文件夹" placeholder="输入文件夹名称" />
+      <van-button class="center" type="primary" size="small" @click="conformAddFolder">确定创建</van-button>
     </van-popup>
     <van-action-sheet v-model="showAction" :actions="actions" @select="onSelect" />
     <van-popup v-model="showReName" class="model">
-      <van-field v-model="newFolderName" maxlength="10" label="文件夹" placeholder="输入文件夹名称" />
-      <van-button type="primary" size="small" @click="conformAddFolder">确定创建</van-button>
+      <van-field v-model="newReFolderName" maxlength="10" label="重命名文件夹" placeholder="输入新的名称" />
+      <van-button class="center" type="primary" size="small" @click="conformUpdateFolder">确定修改</van-button>
     </van-popup>
   </div>
 </template>
@@ -135,7 +135,28 @@ export default {
       console.log("长按事件", index);
       this.showAction = true;
     },
-
+    conformUpdateFolder() {
+      var that = this;
+      console.log(this.newReFolderName, this.selectIndex);
+      that.folder[this.selectIndex] = this.newReFolderName;
+      var body = {
+        type: "update",
+        email: this.$global.user.email,
+        folder: this.folder
+      };
+      that.axios
+        .post("/api/operatorUser", {
+          body: body
+        })
+        .then(res => {
+          that.showReName = that.showAction = false;
+          console.log(res);
+          if (res.data.code === 200) {
+            Notify({ type: "success", message: res.data.data.message });
+            that.folder = res.data.data.folder;
+          }
+        });
+    },
     onSelect(item, index) {
       var that = this;
       console.log(item, index);
@@ -174,15 +195,38 @@ export default {
             // on cancel
           });
       }
+      if (index === 1) {
+        this.showReName = true;
+        // that.folder.splice(this.selectIndex, 1);
+        // var body = {
+        //   type: "del",
+        //   email: this.$global.user.email,
+        //   folder: this.folder
+        // };
+        // that.axios
+        //   .post("/api/operatorUser", {
+        //     body: body
+        //   })
+        //   .then(res => {
+        //     that.showAction = false;
+        //     console.log(res);
+        //     if (res.data.code === 200 || res.data.code === 201) {
+        //       Notify({ type: "success", message: res.data.data.message });
+        //       that.folder = res.data.data.folder;
+        //     }
+        //   });
+      }
     }
   },
   data() {
     return {
       active: 0,
-      newFolderName: undefined,
+      newFolderName: undefined, //创建
+      newReFolderName: undefined, //重命名
+      selectIndex: undefined, //长按菜单选中的index
+
       show: false,
       showReName: false,
-      selectIndex: undefined, //菜单删除
       activeName: ["1"],
       activeName1: ["1"],
       timeOutEvent: 0,
@@ -195,8 +239,13 @@ export default {
 </script>
 <style  scoped>
 .model {
-  width: 100%;
-  padding: 20px 80px;
+  width: 90%;
+  height: auto;
+}
+.center {
+  float: right;
+  margin: 6px 0;
+  margin-right: 20px;
 }
 </style>
 

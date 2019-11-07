@@ -14,7 +14,8 @@ Vue.config.productionTip = false
 
 Vue.prototype.$global = {
   appName: "记事本", user: {
-    email: "1@qq.com"
+    email: "1@qq.com",
+    isVip:0
   }
 };
 
