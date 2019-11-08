@@ -5,6 +5,8 @@ import Login from '../views/login.vue'
 import My from '../views/my.vue'
 import Edit from '../views/edit.vue'
 import feedBack from '../views/feedBack.vue'
+import Detail from '../views/detail.vue'
+import Shares from '../views/shares.vue'
 
 Vue.use(VueRouter)
 
@@ -16,7 +18,7 @@ const routes = [
     redirect: '/login',
     meta: {
       showTabBar: false,//该路由显示tabBar
-    },
+    }
   }, {
     path: '/home',
     name: 'home',
@@ -24,7 +26,7 @@ const routes = [
     meta: {
       requireAuth: true,  // 该路由项需要权限校验
       showTabBar: true,//该路由显示tabBar
-    },
+    }
   }, {
     path: '/my',
     name: 'my',
@@ -32,16 +34,32 @@ const routes = [
     meta: {
       requireAuth: true,  // 该路由项需要权限校验
       showTabBar: true,//该路由显示tabBar
-
-    },
+    }
   }, {
     path: '/edit',
     name: 'edit',
     component: Edit, meta: {
       requireAuth: true,  // 该路由项需要权限校验
       showTabBar: true,//该路由显示tabBar
+    }
+  }, {
+    path: '/detail',
+    name: 'detail',
+    component: Detail,
+    meta: {
+      requireAuth: true,  // 该路由项需要权限校验
+      showTabBar: false,//该路由显示tabBar
+    }
+  },
+  {
+    path: '/shares',
+    name: 'detail',
+    component: Shares,
+    meta: {
+      requireAuth: true,  // 该路由项需要权限校验
+      showTabBar: true,//该路由显示tabBar
 
-    },
+    }
   },
   {
     path: '/login',
@@ -61,7 +79,7 @@ const routes = [
     meta: {
       requireAuth: true,  // 该路由项需要权限校验
       showTabBar: false,//该路由显示tabBar
-    },
+    }
   }
 ]
 

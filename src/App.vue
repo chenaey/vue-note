@@ -5,7 +5,7 @@
         {{this.$global.showTabBar}}
         <van-tabbar-item to="/edit" icon="home-o">添加记事</van-tabbar-item>
         <van-tabbar-item to="/home" icon="search">查看记事</van-tabbar-item>
-        <van-tabbar-item icon="friends-o">会员中心</van-tabbar-item>
+        <van-tabbar-item to="/shares" icon="friends-o">看一看</van-tabbar-item>
         <van-tabbar-item to="/my" icon="setting-o">我的</van-tabbar-item>
       </van-tabbar>
     </dir>

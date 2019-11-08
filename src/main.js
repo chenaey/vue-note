@@ -15,7 +15,19 @@ Vue.config.productionTip = false
 Vue.prototype.$global = {
   appName: "记事本", user: {
     email: "1@qq.com",
-    isVip:0
+    isVip: 0,
+  },
+  noteDetail: {
+    email: '12@qq.com',
+    isShare: 0,
+    folder: '我的记事本',
+    content: {
+      title: '我的第一次记事',
+      tags: ["标签", "标签1"],
+      text: "'我的第一次记事''我的第一次记事''我的第一次记事'",
+      imgs: [],
+      video: null
+    }
   }
 };
 

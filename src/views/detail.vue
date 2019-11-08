@@ -1,11 +1,18 @@
 <template>
   <div class="bg-edit">
-    <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 新增记事</van-row>
-
+    <van-row type="flex" class="padding topBg" justify="center">
+      <span class="left" @click="back">返回</span>
+      {{this.$global.appName}} 记事详情
+    </van-row>
     <van-cell-group>
-      <van-field class="bg-edit" v-model="title" maxlength="30" placeholder="在这里输入标题,最多30个字符" />
       <van-field
-        v-model="message"
+        class="bg-edit"
+        v-model="note.content.title"
+        maxlength="30"
+        placeholder="在这里输入标题,最多30个字符"
+      />
+      <van-field
+        v-model="note.content.text"
         rows="1"
         autosize
         class="bg-edit"
@@ -16,15 +23,19 @@
       />
       <van-field class="bg-edit" v-model="tagString" placeholder="自定义标签 以空格间隔 " />
     </van-cell-group>
-
     <div class="row">
-      <div v-for="(item,index) in tagList" :key="index">
+      <div v-for="(item,index) in note.content.tags" :key="index">
+        <van-tag style="margin-right:4px;" type="success">{{item}}</van-tag>
+      </div>
+    </div>
+    <div class="row">
+      <div v-for="(item,index) in note.tagList" :key="index">
         <van-tag style="margin-right:4px;" type="success">{{item}}</van-tag>
       </div>
     </div>
     <h2 class="tip" @click="showTypeAction">
       当前为
-      <span>{{selectName}}</span>(点击切换)
+      <span>{{selectName}}</span>
     </h2>
     <div v-if="selectType===1" :style="{marginLeft:  62+'px'}">
       <van-uploader
@@ -35,9 +46,7 @@
         :after-read="afterRead"
         :max-size="maxSize"
         :max-count="9"
-      >
-        <!-- <van-button icon="photo" size="small" type="primary">添加图片</van-button> -->
-      </van-uploader>
+      ></van-uploader>
     </div>
     <div v-if="selectType===2" :style="{marginLeft:  62+'px'}">
       <van-uploader
@@ -49,27 +58,16 @@
         :max-size="1"
       ></van-uploader>
     </div>
-    <!-- <h2 class="tip">添加视频记事</h2>
-
-    <van-uploader :before-read="beforeRead" :max-size="maxSize">
-      <van-button icon="video" size="small" type="primary">添加视频</van-button>
-    </van-uploader>-->
-
+    <div class="imgs" v-if="note.content.imgs">
+      <div v-for="(item,index) in note.content.imgs" :key="index">
+        <img class="img-one" :src="baseUrl+item" alt="图片" />
+      </div>
+    </div>
     <van-row type="flex" justify="space-around">
       <van-col>
-        <van-button class="bg-edit" type="default" size="small" @click="showAction">保存至:{{savePath}}</van-button>
-      </van-col>
-
-      <van-col>
-        <van-button type="primary" size="small" @click="conformSave">确定保存</van-button>
+        <van-button type="primary" size="small" @click="conformSave">确定修改</van-button>
       </van-col>
     </van-row>
-    <van-action-sheet v-model="showType" :actions="actionType" @select="onSelectType" />
-    <!--进度条-->
-    <div v-if="percent!==0">
-      <van-progress :percentage="percent" />
-    </div>
-    <van-action-sheet v-model="show" :actions="actions" @select="onSelect" />
   </div>
 </template>
 
@@ -86,23 +84,40 @@ Vue.use(Toast)
   .use(Uploader);
 
 export default {
+  created() {
+    console.log("created");
+    console.log(this.$global.noteDetail);
+    if (!this.$global.noteDetail) {
+      Notify({ type: "danger", message: "发生错误,请返回重试" });
+    } else {
+      var note = this.$global.noteDetail;
+      this.tagList = note.content.tags;
+      console.log(note.content.text);
+      if (note.content.text === null) {
+        note.content.text = "";
+      }
+      this.tagString = note.content.tags.join(" ");
+      this.note = note;
+      console.log(note);
+    }
+  },
   watch: {
     tagString() {
       if (this.tagString === "") {
         return;
       }
-
-      this.tagList = this.tagString.split(" ");
+      this.note.content.tags = this.tagString.split(" ");
       if (this.tagList.length > 10) {
         Toast("非Vip仅支持10个标签");
         this.tagList = this.tagList.splice(0, 10);
-
         return;
       }
     }
   },
   data() {
     return {
+      baseUrl: "http://cdn.i7code.cn/",
+      note: undefined,
       title: "",
       message: "",
       tagList: [],
@@ -124,29 +139,6 @@ export default {
       percent: 0,
       uploadImgKey: [] //上传图片成功后返回的key
     };
-  },
-
-  created() {
-    console.log("created");
-    var body = {
-      type: "get",
-      email: this.$global.user.email
-    };
-    this.getUpLoadToken();
-    this.axios
-      .post("/api/operatorUser", {
-        body: body
-      })
-      .then(res => {
-        if (res.data.code === 200 || res.data.code === 201) {
-          console.log(res.data.data.folder);
-          this.actions = res.data.data.folder.map(name => {
-            return {
-              name: name
-            };
-          });
-        }
-      });
   },
 
   methods: {
@@ -185,6 +177,10 @@ export default {
       }
       return true;
     },
+    back() {
+      this.$router.go(-1);
+    },
+
     beforeRead(file) {
       const enableileType = ["image/jpeg", "image/png", "image/gif"];
       if (file.length && file.length > 1) {
@@ -206,29 +202,25 @@ export default {
     },
 
     conformSave() {
-      if (this.title.length <= 0) {
+      if (this.note.content.title <= 0) {
         Notify({ type: "danger", message: "标题不能为空" });
         return;
       }
-      console.log(this.fileList);
       if (this.fileList.length > 0) {
-        console.log("有图片");
         this.uploadImg();
       } else {
         var body = {
-          title: this.title,
-          email: this.$global.user.email,
-          tags: this.tagList,
-          folder: this.savePath,
-          text: this.message,
-          createTime: new Date().getTime()
+          _id: this.note._id,
+          isShare: this.note.isShare,
+          folder: this.note.folder,
+          content: this.note.content
         };
         this.axios
-          .post("/api/addnote", {
+          .post("/api/updatenote", {
             body: body
           })
           .then(res => {
-            if (res.data.code === 200 || res.data.code === 201) {
+            if (res.data.code === 200) {
               console.log(res.data);
               Notify({ type: "success", message: res.data.data.message });
             } else {
@@ -284,13 +276,11 @@ export default {
         var body = {
           title: this.title,
           email: this.$global.user.email,
-          tags: this.tagList,
-          folder: this.savePath,
-          text: this.message,
-          imgs: this.uploadImgKey,
-          createTime: new Date().getTime()
+          tags: this.tags,
+          folder: this.folder,
+          text: this.text,
+          imgs: this.uploadImgKey
         };
-        console.log(this.message);
         this.axios
           .post("/api/addnote", {
             body: body
@@ -340,6 +330,15 @@ export default {
   padding-right: 20px;
 }
 
+.img-one {
+  width: 100%;
+  height: auto;
+}
+
+.left {
+  position: absolute;
+  left: 20px;
+}
 .row {
   display: flex;
   flex-direction: row;
