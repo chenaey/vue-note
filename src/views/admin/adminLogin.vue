@@ -1,13 +1,13 @@
 <template>
   <div>
-    <van-row type="flex" class="padding topBg" justify="center">记事本-登录</van-row>
+    <van-row type="flex" class="padding topBg" justify="center">记事本-管理员登录</van-row>
     <div class="margin-top">
       <van-cell-group>
         <van-field
           v-model="email"
           clearable
           label="登录邮箱"
-          placeholder="登录邮箱,没有会自动注册哦"
+          placeholder="登录邮箱"
           :error-message="errMsg"
         />
         <van-field
@@ -21,8 +21,7 @@
 
       <van-row type="flex" class="padding" justify="center">
         <van-button type="primary" class="margin-right" @click="toLogin">立即登录</van-button>
-        <van-button @click="toFindpassword" class="margin-right">忘记密码?</van-button>
-        <van-button @click="adminLogin">管理员登录</van-button>
+        <van-button type="default" class="margin-right" @click="toUserLogin">普通用户登录</van-button>
       </van-row>
     </div>
   </div>
@@ -50,41 +49,29 @@ export default {
   },
 
   methods: {
-    adminLogin() {
-      this.$router.push("../adminlogin");
+    toUserLogin() {
+      this.$router.push("../login");
     },
     toLogin() {
-      //@TODO 服务器登录
-      //   Toast("输入错误");
-      if (!this.password || !this.email) {
-        Toast("请检查输入是否有误");
-        return;
-      }
-      var reg = /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/;
-      if (this.password.length < 6) {
-        Toast("密码最短为6位数");
-        return;
-      }
-      if (this.password && reg.test(this.email)) {
+      if (this.password && this.email) {
         this.axios
-          .post("/api/login", {
+          .post("/api/adminlogin", {
             email: this.email,
-            password: this.password,
-            createTime: new Date().getTime()
+            password: this.password
           })
           .then(res => {
-            if (res.data.code === 200 || res.data.code === 201) {
+            if (res.data.code === 200) {
               console.log(res.data);
               this.$global.user = res.data.data;
-              sessionStorage.setItem("isLogin", true);
+              sessionStorage.setItem("isAdmin", true);
               Notify({ type: "success", message: res.data.data.message });
-              this.$router.push("/edit");
+              this.$router.push("/admin/home");
             } else {
               Notify({ type: "danger", message: res.data.data.message });
             }
           });
       } else {
-        Toast("请检查输入邮箱是否有误");
+        Toast("请检查输入是否有误");
       }
     },
 
@@ -108,9 +95,5 @@ export default {
 }
 .margin-top {
   margin-top: 40px;
-}
-.adminLogin {
-  display: flex;
-  justify-content: center;
 }
 </style>

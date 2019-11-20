@@ -33,11 +33,23 @@
         <van-tag style="margin-right:4px;" type="success">{{item}}</van-tag>
       </div>
     </div>
+    <!--video-->
+    <div class="row-center" v-if="note.content.video">
+      <video width="350" height="240" controls="controls">
+        <source :src="baseUrl+note.content.video" type="video/mp4" />
+        <source :src="baseUrl+note.content.video" type="video/ogg" />
+        <source :src="baseUrl+note.content.video" type="video/webm" />
+        <object :src="baseUrl+note.content.video" width="350" height="240">
+          <embed :src="baseUrl+note.content.video" width="350" height="240" />
+        </object>
+      </video>
+    </div>
+
     <h2 class="tip" @click="showTypeAction">
       当前为
       <span>{{selectName}}</span>
     </h2>
-    <div v-if="selectType===1" :style="{marginLeft:  62+'px'}">
+    <!-- <div v-if="selectType===1" :style="{marginLeft:  62+'px'}">
       <van-uploader
         v-model="fileList"
         multiple
@@ -48,22 +60,24 @@
         :max-count="9"
       ></van-uploader>
     </div>
-    <div v-if="selectType===2" :style="{marginLeft:  62+'px'}">
+    <div v-if="selectType===2">
       <van-uploader
-        v-model="fileList"
         accept="video/mp4"
         class="bg-edit imgs"
         :before-read="beforeReadVideo"
-        :after-read="afterRead"
-        :max-size="1"
+        :after-read="afterReadVideo"
       ></van-uploader>
-    </div>
+    </div>-->
     <div class="imgs" v-if="note.content.imgs">
       <div v-for="(item,index) in note.content.imgs" :key="index">
         <img class="img-one" :src="baseUrl+item" alt="图片" />
       </div>
     </div>
-    <van-row type="flex" justify="space-around">
+    <van-row
+      type="flex"
+      justify="space-around"
+      v-if="this.$global.user.email===this.$global.noteDetail.email"
+    >
       <van-col>
         <van-button type="primary" size="small" @click="conformSave">确定修改</van-button>
       </van-col>
@@ -98,6 +112,13 @@ export default {
       }
       this.tagString = note.content.tags.join(" ");
       this.note = note;
+      if (note.content.video) {
+        this.selectName = "视频记事本";
+      } else if (note.content.imgs && note.content.imgs.length > 0) {
+        this.selectName = "图文记事本";
+      } else {
+        this.selectName = "文字记事本";
+      }
       console.log(note);
     }
   },
@@ -123,6 +144,7 @@ export default {
       tagList: [],
       savePath: "我的记事本",
       tagString: undefined,
+      video: "",
       show: false,
       showType: false,
       actionType: [
@@ -159,6 +181,7 @@ export default {
     // 返回布尔值
 
     beforeReadVideo(file) {
+      console.log(file);
       const enableileType = ["video/mp4"];
       if (file.length && file.length > 1) {
         var isTrue = file.some(file => {
@@ -208,6 +231,8 @@ export default {
       }
       if (this.fileList.length > 0) {
         this.uploadImg();
+      } else if (this.video !== "") {
+        this.uploadVideo();
       } else {
         var body = {
           _id: this.note._id,
@@ -228,6 +253,10 @@ export default {
             }
           });
       }
+    },
+
+    uploadVideo() {
+      console.log(this.video);
     },
 
     uploadImg() {
@@ -254,6 +283,11 @@ export default {
       if (res.percent === 100) {
         Notify({ type: "success", message: "上传文件成功" });
       }
+    },
+
+    afterReadVideo(files) {
+      console.log(files);
+      console.log(this.fileList);
     },
 
     afterRead(files) {

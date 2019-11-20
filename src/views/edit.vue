@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-edit">
+  <div class="edit bg-edit">
     <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 新增记事</van-row>
 
     <van-cell-group>
@@ -39,19 +39,18 @@
         <!-- <van-button icon="photo" size="small" type="primary">添加图片</van-button> -->
       </van-uploader>
     </div>
-    <div v-if="selectType===2" :style="{marginLeft:  62+'px'}">
-      <van-uploader
-        v-model="fileList"
-        accept="video/mp4"
-        class="bg-edit imgs"
-        :before-read="beforeReadVideo"
-        :after-read="afterRead"
-        :max-size="1"
-      ></van-uploader>
+    <div v-if="selectType===2">
+      <input
+        type="file"
+        class="videoBtn"
+        id="selectVideo"
+        @change="onSelectVideo"
+        accept="video/*"
+        capture="user"
+      />
+      <!-- <van-uploader class="bg-edit imgs" upload-text="123213213" :after-read="afterReadVideo"></van-uploader> -->
     </div>
-    <!-- <h2 class="tip">添加视频记事</h2>
-
-    <van-uploader :before-read="beforeRead" :max-size="maxSize">
+    <!-- <van-uploader :before-read="afterReadVideo" :max-size="maxSize">
       <van-button icon="video" size="small" type="primary">添加视频</van-button>
     </van-uploader>-->
 
@@ -86,6 +85,30 @@ Vue.use(Toast)
   .use(Uploader);
 
 export default {
+  created() {
+    console.log("created");
+    console.log(this.$global.user);
+    var body = {
+      type: "get",
+      email: this.$global.user.email
+    };
+    this.getUpLoadToken();
+    this.axios
+      .post("/api/operatorUser", {
+        body: body
+      })
+      .then(res => {
+        if (res.data.code === 200 || res.data.code === 201) {
+          console.log(res.data.data);
+          console.log(res.data.data.folder);
+          this.actions = res.data.data.folder.map(name => {
+            return {
+              name: name
+            };
+          });
+        }
+      });
+  },
   watch: {
     tagString() {
       if (this.tagString === "") {
@@ -93,10 +116,9 @@ export default {
       }
 
       this.tagList = this.tagString.split(" ");
-      if (this.tagList.length > 10) {
+      if (this.$global.user.isVip === 0 && this.tagList.length > 10) {
         Toast("非Vip仅支持10个标签");
         this.tagList = this.tagList.splice(0, 10);
-
         return;
       }
     }
@@ -120,33 +142,11 @@ export default {
       actions: [{ name: "我的记事本" }],
       maxSize: 1024 * 1024 * 1024, //byte 1 m,
       fileList: [],
+      videoFile: "",
       fileListSuccess: 0, //上传成功数量
       percent: 0,
       uploadImgKey: [] //上传图片成功后返回的key
     };
-  },
-
-  created() {
-    console.log("created");
-    var body = {
-      type: "get",
-      email: this.$global.user.email
-    };
-    this.getUpLoadToken();
-    this.axios
-      .post("/api/operatorUser", {
-        body: body
-      })
-      .then(res => {
-        if (res.data.code === 200 || res.data.code === 201) {
-          console.log(res.data.data.folder);
-          this.actions = res.data.data.folder.map(name => {
-            return {
-              name: name
-            };
-          });
-        }
-      });
   },
 
   methods: {
@@ -167,27 +167,41 @@ export default {
     // 返回布尔值
 
     beforeReadVideo(file) {
-      const enableileType = ["video/mp4"];
-      if (file.length && file.length > 1) {
-        var isTrue = file.some(file => {
-          return !enableileType.includes(file.type);
-        });
-        if (isTrue) {
-          Toast("仅支持上传.mp4格式");
-          return false;
-        }
-        return true;
-      }
+      console.log(file);
+      // const enableileType = ["video/mp4"];
+      // if (file.length && file.length > 1) {
+      //   var isTrue = file.some(file => {
+      //     return !enableileType.includes(file.type);
+      //   });
+      //   if (isTrue) {
+      //     Toast("仅支持上传.mp4格式");
+      //     return false;
+      //   }
+      //   return true;
+      // }
 
-      if (!enableileType.includes(file.type)) {
-        Toast("仅支持上传.mp4格式");
-        return false;
-      }
+      // if (!enableileType.includes(file.type)) {
+      //   Toast("仅支持上传.mp4格式");
+      //   return false;
+      // }
       return true;
     },
     beforeRead(file) {
       const enableileType = ["image/jpeg", "image/png", "image/gif"];
+      console.log(file);
       if (file.length && file.length > 1) {
+        var size = file.reduce((total, each) => {
+          return total + each.size;
+        }, 0);
+        console.log(size);
+        if (size > 1 * 1024 * 1024 && !this.$global.user.isVip) {
+          Toast("非会员仅支持上传小于1M的文件");
+          return false;
+        }
+        if (size > 10 * 1024 * 1024 && this.$global.user.isVip) {
+          Toast("会员仅支持上传小于10M的文件");
+          return false;
+        }
         var isTrue = file.some(file => {
           return !enableileType.includes(file.type);
         });
@@ -196,6 +210,15 @@ export default {
           return false;
         }
         return true;
+      }
+      var ssize = file.size;
+      if (ssize > 1 * 1024 * 1024 && !this.$global.user.isVip) {
+        Toast("非会员仅支持上传小于1M的文件");
+        return false;
+      }
+      if (ssize > 10 * 1024 * 1024 && this.$global.user.isVip) {
+        Toast("会员仅支持上传小于10M的文件");
+        return false;
       }
 
       if (!enableileType.includes(file.type)) {
@@ -206,15 +229,20 @@ export default {
     },
 
     conformSave() {
+      Toast("正在上传数据 请勿离开此页面");
       if (this.title.length <= 0) {
         Notify({ type: "danger", message: "标题不能为空" });
         return;
       }
       console.log(this.fileList);
-      if (this.fileList.length > 0) {
-        console.log("有图片");
+      if (this.selectName === "视频记事本") {
+        console.log("视频");
+        this.qiniuUploadVideo(this.videoFile);
+      } else if (this.fileList.length > 0) {
+        console.log("图片");
         this.uploadImg();
       } else {
+        console.log("文字");
         var body = {
           title: this.title,
           email: this.$global.user.email,
@@ -238,11 +266,76 @@ export default {
       }
     },
 
+    onSelectVideo(event) {
+      console.log(event.target.files[0]);
+      var size = event.target.files[0].size;
+      if (size > 10 * 1024 * 2014) {
+        Toast("文件大于10M将上传失败");
+        return;
+      }
+      // this.$global.user.isVip
+      this.videoFile = event;
+    },
+
+    qiniuUploadVideo(event) {
+      console.log(event);
+      if (!event) {
+        Toast("发生错误");
+        return;
+      }
+      var file = event.target.files[0];
+      const formdata = new FormData();
+      formdata.append("file", file);
+      formdata.append("token", this.uploadToken);
+      this.$axios({
+        method: "post",
+        url: "http://upload-z2.qiniup.com/", // 七牛云的上传地址 华南区
+        headers: {
+          "Content-Type": "multipart/form-data"
+        },
+        data: formdata
+      })
+        .then(res => {
+          console.log(res);
+          console.log(res.data);
+
+          //上传完成 将key写入数据库
+          var body = {
+            title: this.title,
+            email: this.$global.user.email,
+            tags: this.tagList,
+            folder: this.savePath,
+            text: this.message,
+            imgs: this.uploadImgKey,
+            createTime: new Date().getTime(),
+            video: res.data.hash
+          };
+          console.log(this.message);
+          this.axios
+            .post("/api/addnote", {
+              body: body
+            })
+            .then(res => {
+              if (res.data.code === 200) {
+                console.log(res.data);
+                Notify({ type: "success", message: res.data.data.message });
+              } else {
+                Notify({ type: "danger", message: res.data.data.message });
+              }
+            });
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+
     uploadImg() {
       var config = {
         useCdnDomain: true
       };
       var fileList = this.fileList;
+      console.log(fileList);
+
       for (let i = 0; i < fileList.length; i++) {
         var observable = qiniu.upload(
           fileList[i].file,
@@ -264,6 +357,17 @@ export default {
       }
     },
 
+    afterReadVideo(file) {
+      console.log(file);
+      var config = {
+        useCdnDomain: true
+      };
+      var observable = qiniu.upload(file, null, this.uploadToken, config);
+      observable.subscribe(this.next, this.error, this.completeVideo);
+      this.videoFile = file;
+      console.log(this.videoFile);
+    },
+
     afterRead(files) {
       console.log(files);
       console.log(this.fileList);
@@ -273,7 +377,34 @@ export default {
     error(err) {
       console.log(err);
     },
-
+    completeVideo(res) {
+      console.log(res);
+      this.percent = 0;
+      console.log("上传完成");
+      var body = {
+        title: this.title,
+        email: this.$global.user.email,
+        tags: this.tagList,
+        folder: this.savePath,
+        text: this.message,
+        imgs: this.uploadImgKey,
+        createTime: new Date().getTime(),
+        video: res.key
+      };
+      console.log(this.message);
+      this.axios
+        .post("/api/addnote", {
+          body: body
+        })
+        .then(res => {
+          if (res.data.code === 200) {
+            console.log(res.data);
+            Notify({ type: "success", message: res.data.data.message });
+          } else {
+            Notify({ type: "danger", message: res.data.data.message });
+          }
+        });
+    },
     complete(res) {
       console.log(res);
       this.percent = 0;
@@ -308,12 +439,18 @@ export default {
 
     onSelect(item) {
       this.show = false;
+      console.log(item);
       this.savePath = item.name;
       Toast(item.name);
     },
 
     onSelectType(item) {
       this.showType = false;
+      if (item.type === 2 && this.$global.user.isVip === 0) {
+        Toast("非会员不支持视频记事本");
+        return;
+      }
+      console.log(item);
       this.selectName = item.name;
       this.selectType = item.type;
       Toast(item.name);
@@ -331,6 +468,10 @@ export default {
 </script>
 
 <style  scoped>
+.edit {
+  min-height: 500px;
+  background: #ddd;
+}
 .bg-edit {
   background-color: #fffcf6;
 }
@@ -357,5 +498,8 @@ export default {
   font-size: 14px;
   color: rgba(69, 90, 100, 0.6);
   padding: 10px 15px 15px;
+}
+.videoBtn {
+  padding: 6px;
 }
 </style>

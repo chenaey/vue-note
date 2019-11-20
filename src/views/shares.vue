@@ -1,9 +1,11 @@
 <template>
   <div>
     <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 笔记广场</van-row>
+    <van-cell v-if="notes.length===0" title="当前暂无记事本分享" />
+
     <div v-for="(item,index) in notes" :key="index">
       <van-swipe-cell>
-        <van-cell :title="item.content.title" :value="item.time" />
+        <van-cell @click="lookDetail(item)" :title="item.content.title" :value="item.time" />
         <template slot="right">
           <van-button square type="default" :text="item.email+'分享'" />
           <van-button @click="collectNote(item)" square type="primary" text="收藏" />
@@ -21,6 +23,7 @@ import {
   CollapseItem,
   Popup,
   Notify,
+  Toast,
   ActionSheet,
   Dialog,
   SwipeCell
@@ -31,6 +34,7 @@ Vue.use(Collapse)
   .use(Popup)
   .use(Notify)
   .use(Dialog)
+  .use(Toast)
   .use(SwipeCell)
   .use(ActionSheet);
 
@@ -48,6 +52,14 @@ export default {
         message: "将收藏该笔记"
       })
         .then(() => {
+          if (this.$global.user.collectCount >= 20 && this.$global.user.isVip) {
+            Toast("非会员收藏上限为20");
+            return;
+          }
+          if (this.$global.user.collectCount >= 50 && !this.$global.user.isVip) {
+            Toast("会员收藏上限为50");
+            return;
+          }
           var body = item;
           body.folder = "我的收藏";
           body.email = this.$global.user.email;
@@ -88,7 +100,7 @@ export default {
         console.log(res);
         if (res.data.code === 200) {
           console.log(res.data.data.note);
-          var notes = res.data.data.note;
+          var notes = res.data.data.list;
           for (var j = 0; j < notes.length; j++) {
             notes[j].time = that.parseTime(notes[j].createTime);
           }

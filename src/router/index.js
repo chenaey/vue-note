@@ -7,6 +7,12 @@ import Edit from '../views/edit.vue'
 import feedBack from '../views/feedBack.vue'
 import Detail from '../views/detail.vue'
 import Shares from '../views/shares.vue'
+import adminHome from '../views/admin/home.vue'
+import adminFeeback from '../views/admin/feedback.vue'
+import adminSHares from '../views/admin/shares.vue'
+import adminUser from '../views/admin/user.vue'
+import adminVersion from '../views/admin/version.vue'
+import adminLogin from '../views/admin/adminLogin.vue'
 
 Vue.use(VueRouter)
 
@@ -21,89 +27,157 @@ const routes = [
     }
   }, {
     path: '/home',
-    name: 'home',
+    name: 'home123',
     component: Home,
     meta: {
       requireAuth: true,  // 该路由项需要权限校验
-      showTabBar: true,//该路由显示tabBar
+      showTabBar: true,
     }
   }, {
     path: '/my',
     name: 'my',
     component: My,
     meta: {
-      requireAuth: true,  // 该路由项需要权限校验
-      showTabBar: true,//该路由显示tabBar
+      requireAuth: true,
+      showTabBar: true,
     }
   }, {
     path: '/edit',
     name: 'edit',
     component: Edit, meta: {
-      requireAuth: true,  // 该路由项需要权限校验
-      showTabBar: true,//该路由显示tabBar
+      requireAuth: true,
+      showTabBar: true,
     }
   }, {
     path: '/detail',
     name: 'detail',
     component: Detail,
     meta: {
-      requireAuth: true,  // 该路由项需要权限校验
-      showTabBar: false,//该路由显示tabBar
+      requireAuth: true,
+      showTabBar: false,
     }
   },
   {
     path: '/shares',
-    name: 'detail',
+    name: 'Shares',
     component: Shares,
     meta: {
-      requireAuth: true,  // 该路由项需要权限校验
-      showTabBar: true,//该路由显示tabBar
-
+      requireAuth: true,
+      showTabBar: true,
     }
   },
   {
     path: '/login',
     name: 'Login',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
     component: Login,
   },
   {
     path: '/feedback',
     name: 'feedBack',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
     component: feedBack,
     meta: {
-      requireAuth: true,  // 该路由项需要权限校验
-      showTabBar: false,//该路由显示tabBar
+      requireAuth: true,
+      showTabBar: false,
     }
-  }
+  },
+
+  {
+    path: '/admin/home',
+    name: 'adminHome',
+    component: adminHome,
+    meta: {
+      requireAuth: false,
+      requireAdminAuth: true,
+      showTabBar: false
+    }
+  },
+
+  {
+    path: '/admin/shares',
+    name: 'adminSHares',
+    component: adminSHares,
+    meta: {
+      requireAdminAuth: true,
+      requireAuth: false,
+
+      showTabBar: false
+    }
+  }, {
+    path: '/admin/user',
+    name: 'adminUser',
+    component: adminUser,
+    meta: {
+      requireAuth: false,
+
+      requireAdminAuth: true,
+      showTabBar: false
+    }
+  },
+  {
+    path: '/admin/feedback',
+    name: 'adminFeeback',
+    component: adminFeeback,
+    meta: {
+      requireAuth: false,
+
+      requireAdminAuth: true,
+      showTabBar: false
+    }
+  },
+  {
+    path: '/admin/version',
+    name: 'adminVersion',
+    component: adminVersion,
+    meta: {
+      requireAuth: false,
+      requireAdminAuth: true,
+      showTabBar: false
+    }
+  }, {
+    path: '/adminlogin',
+    name: 'adminlogin',
+    component: adminLogin,
+    meta: {
+      requireAuth: false,
+      requireAdminAuth: false,
+      showTabBar: false
+    }
+  },
 ]
 
 
-
 const router = new VueRouter({
-  mode: 'history',
+  // mode: 'hash',
   routes
 })
-// router.beforeEach((to, from, next) => {
-//   if (to.meta.requireAuth) {  // 判断该路由是否需要登录权限
-//     if (localStorage.token) {  // 获取当前的token是否存在
-//       console.log("token存在");
-//       next();
-//     } else {
-//       console.log("token不存在");
-//       next({
-//         path: '/login', // 将跳转的路由path作为参数，登录成功后跳转到该路由
-//         query: { redirect: to.fullPath }
-//       })
-//     }
-//   }
-//   else { // 如果不需要权限校验，直接进入路由界面
-//     next();
-//   }
-// });
+
+router.beforeEach((to, from, next) => {
+  console.log(to.meta.requireAuth)
+  if (to.meta.requireAuth) {
+    var isLogin = sessionStorage.getItem('isLogin');
+    var isAdmins = sessionStorage.getItem('isAdmin');
+
+    if (isLogin || isAdmins) {
+      next();
+    } else {
+      next({
+        path: '/login',
+        query: { redirect: to.fullPath }
+      })
+    }
+  } else if (to.meta.requireAdminAuth) {
+    var isAdmin = sessionStorage.getItem('isAdmin');
+    if (isAdmin) {
+      next()
+    } else {
+      next({
+        path: '/adminlogin',
+        query: { redirect: to.fullPath }
+      })
+    }
+  }
+  else {
+    next();
+  }
+})
 export default router

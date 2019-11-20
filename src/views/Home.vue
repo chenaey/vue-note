@@ -142,9 +142,9 @@ export default {
       var Y = date.getFullYear();
       var M = date.getMonth() + 1;
       var D = date.getDate();
-      var h = date.getHours();
-      var m = date.getMinutes();
-
+      var h = date.getHours() < 10 ? "0" + date.getHours() : date.getHours();
+      var m =
+        date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes();
       return `${Y}/${M}/${D} ${h}:${m}`;
     },
 
@@ -231,6 +231,7 @@ export default {
             var notes = res.data.data.note;
             var folders = that.folder;
             var needList = [];
+            var collectCount = 0; //收藏数量
             for (var i = 0; i < folders.length; i++) {
               var list = [];
               for (var j = 0; j < notes.length; j++) {
@@ -238,12 +239,16 @@ export default {
                   notes[j].time = that.parseTime(notes[j].createTime);
                   list.push(notes[j]);
                   notes.splice(j, 1);
+                  if (folders[i] === "我的收藏") {
+                    collectCount++;
+                  }
                 }
               }
               needList.push(list);
             }
             console.log(needList);
-            that.notes = needList;
+            this.$global.user.collectCount = collectCount;
+            if (NodeList) that.notes = needList;
           }
         });
     },
