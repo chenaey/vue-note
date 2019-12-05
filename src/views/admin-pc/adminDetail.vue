@@ -4,60 +4,36 @@
       <span class="left" @click="back">返回</span>
       {{this.$global.appName}} 记事详情
     </van-row>
-
-    <van-row v-if="isMyNote" type="flex" justify="space-around" style="margin-top:10px;">
-      <van-col>
-        <van-button type="danger" size="small" @click="deleteNote()">删除</van-button>
-      </van-col>
-
-      <van-col>
-        <van-button type="primary" size="small" @click="conformSave">保存</van-button>
-      </van-col>
-    </van-row>
-
     <van-cell-group>
-      <div class="title">
-        <van-field
-          class="bg-edit"
-          v-model="note.content.title"
-          maxlength="30"
-          placeholder="在这里输入标题,最多30个字符"
-        />
-      </div>
-      <div class="message">
-        <van-field
-          v-model="note.content.text"
-          rows="10"
-          autosize
-          class="bg-edit"
-          type="textarea"
-          placeholder="又是美好的一天,写点东西吧~"
-          maxlength="2048"
-          show-word-limit
-        />
-      </div>
+      <van-field
+        class="bg-edit"
+        v-model="note.content.title"
+        maxlength="30"
+        placeholder="在这里输入标题,最多30个字符"
+      />
+      <van-field
+        v-model="note.content.text"
+        rows="1"
+        autosize
+        class="bg-edit"
+        type="textarea"
+        placeholder="又是美好的一天,写点东西吧~"
+        maxlength="2048"
+        show-word-limit
+      />
+      <van-field class="bg-edit" v-model="tagString" placeholder="自定义标签 以空格间隔 " />
     </van-cell-group>
-
-    <div class="tags">
-      <el-tag
-        :key="tag"
-        class="eachtag"
-        v-for="tag in tagList"
-        closable
-        :disable-transitions="false"
-        @close="handleClose(tag)"
-      >{{tag}}</el-tag>
-      <el-input
-        class="input-new-tag"
-        v-if="inputVisible"
-        v-model="inputValue"
-        ref="saveTagInput"
-        size="small"
-        @keyup.enter.native="handleInputConfirm"
-        @blur="handleInputConfirm"
-      ></el-input>
-      <el-button v-else class="button-new-tag" size="small" @click="showInput">+ 新标签</el-button>
+    <div class="row">
+      <div v-for="(item,index) in note.content.tags" :key="index">
+        <van-tag style="margin-right:4px;" type="success">{{item}}</van-tag>
+      </div>
     </div>
+    <div class="row">
+      <div v-for="(item,index) in note.tagList" :key="index">
+        <van-tag style="margin-right:4px;" type="success">{{item}}</van-tag>
+      </div>
+    </div>
+    <!--video-->
     <div class="row-center" v-if="note.content.video">
       <video width="350" height="240" controls="controls">
         <source :src="baseUrl+note.content.video" type="video/mp4" />
@@ -73,12 +49,39 @@
       当前为
       <span>{{selectName}}</span>
     </h2>
-
+    <!-- <div v-if="selectType===1" :style="{marginLeft:  62+'px'}">
+      <van-uploader
+        v-model="fileList"
+        multiple
+        class="bg-edit imgs"
+        :before-read="beforeRead"
+        :after-read="afterRead"
+        :max-size="maxSize"
+        :max-count="9"
+      ></van-uploader>
+    </div>
+    <div v-if="selectType===2">
+      <van-uploader
+        accept="video/mp4"
+        class="bg-edit imgs"
+        :before-read="beforeReadVideo"
+        :after-read="afterReadVideo"
+      ></van-uploader>
+    </div>-->
     <div class="imgs" v-if="note.content.imgs">
       <div v-for="(item,index) in note.content.imgs" :key="index">
         <img class="img-one" :src="baseUrl+item" alt="图片" />
       </div>
     </div>
+    <van-row
+      type="flex"
+      justify="space-around"
+      v-if="this.$global.user.email===this.$global.noteDetail.email"
+    >
+      <!-- <van-col>
+        <van-button type="primary" size="small" @click="conformSave">确定修改</van-button>
+      </van-col> -->
+    </van-row>
   </div>
 </template>
 
@@ -87,7 +90,7 @@
 import Vue from "vue";
 const qiniu = require("qiniu-js");
 
-import { Toast, ActionSheet, Notify, Uploader, Progress, Dialog } from "vant";
+import { Toast, ActionSheet, Notify, Uploader, Progress } from "vant";
 Vue.use(Toast)
   .use(Progress)
   .use(ActionSheet)
@@ -98,10 +101,6 @@ export default {
   created() {
     console.log("created");
     console.log(this.$global.noteDetail);
-    if (this.$global.noteDetail.email === this.$global.user.email) {
-      console.log("相同");
-      this.isMyNote = true;
-    }
     if (!this.$global.noteDetail) {
       Notify({ type: "danger", message: "发生错误,请返回重试" });
     } else {
@@ -124,23 +123,22 @@ export default {
     }
   },
   watch: {
-    // tagString() {
-    //   if (this.tagString === "") {
-    //     return;
-    //   }
-    //   this.note.content.tags = this.tagString.split(" ");
-    //   if (this.tagList.length > 10) {
-    //     Toast("非Vip仅支持10个标签");
-    //     this.tagList = this.tagList.splice(0, 10);
-    //     return;
-    //   }
-    // }
+    tagString() {
+      if (this.tagString === "") {
+        return;
+      }
+      this.note.content.tags = this.tagString.split(" ");
+      if (this.tagList.length > 10) {
+        Toast("非Vip仅支持10个标签");
+        this.tagList = this.tagList.splice(0, 10);
+        return;
+      }
+    }
   },
   data() {
     return {
       baseUrl: "http://cdn.i7code.cn/",
       note: undefined,
-      isMyNote: false,
       title: "",
       message: "",
       tagList: [],
@@ -161,36 +159,11 @@ export default {
       fileList: [],
       fileListSuccess: 0, //上传成功数量
       percent: 0,
-      uploadImgKey: [], //上传图片成功后返回的key,
-      inputVisible: false,
-      inputValue: ""
+      uploadImgKey: [] //上传图片成功后返回的key
     };
   },
 
   methods: {
-    handleClose(tag) {
-      this.tagList.splice(this.tagList.indexOf(tag), 1);
-    },
-
-    showInput() {
-      this.inputVisible = true;
-      // this.$nextTick( => {
-      //   this.$refs.saveTagInput.$refs.input.focus();
-      // });
-    },
-
-    handleInputConfirm() {
-      let inputValue = this.inputValue;
-      if (this.$global.user.isVip === 0 && this.tagList.length >= 10) {
-        Toast("非Vip仅支持10个标签");
-        return;
-      }
-      if (inputValue) {
-        this.tagList.push(inputValue);
-      }
-      this.inputVisible = false;
-      this.inputValue = "";
-    },
     //获取上传凭证token
     getUpLoadToken() {
       this.axios
@@ -376,37 +349,6 @@ export default {
 
     showAction() {
       this.show = true;
-    },
-
-    deleteNote(item = this.note) {
-      var that = this;
-      console.log(item);
-      Dialog.confirm({
-        title: "提示",
-        message: "将删除此记事"
-      })
-        .then(() => {
-          var body = {
-            type: "del",
-            email: this.$global.user.email,
-            _id: item._id
-          };
-          that.axios
-            .post("/api/delnote", {
-              body: body
-            })
-            .then(res => {
-              console.log(res);
-
-              if (res.data.code === 200) {
-                Notify({ type: "success", message: res.data.data.message });
-                this.back();
-              }
-            });
-        })
-        .catch(() => {
-          // on cancel
-        });
     }
   }
 };
@@ -414,7 +356,7 @@ export default {
 
 <style  scoped>
 .bg-edit {
-  background-color: #fff;
+  background-color: #fffcf6;
 }
 .add-btn {
   float: right;
@@ -429,9 +371,8 @@ export default {
 
 .left {
   position: absolute;
-  left: 20px;
+  left: 320px;
 }
-
 .row {
   display: flex;
   flex-direction: row;
@@ -449,52 +390,5 @@ export default {
   font-size: 14px;
   color: rgba(69, 90, 100, 0.6);
   padding: 10px 15px 15px;
-}
-.message {
-  margin: 10px 30px;
-  border: 1px solid #999;
-}
-
-.tag {
-  margin: 10px 30px;
-  padding: 4px 10px;
-  border: 1px solid #999;
-}
-
-.videoBtn {
-  padding: 6px;
-}
-
-.eachtag {
-  margin-bottom: 5px;
-}
-
-.tags {
-  border: 1px solid #999;
-  margin: 10px 30px;
-  padding: 10px 5px;
-}
-
-.title {
-  margin: 10px 30px;
-  border: 1px solid #999;
-}
-
-.el-tag + .el-tag {
-  margin-left: 10px;
-}
-
-.button-new-tag {
-  margin-left: 10px;
-  height: 32px;
-  line-height: 30px;
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-.input-new-tag {
-  width: 90px;
-  margin-left: 10px;
-  vertical-align: bottom;
 }
 </style>

@@ -1,16 +1,46 @@
 <template>
   <div>
     <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 我的</van-row>
+    <div class="top-row">
+      <img
+        class="avator"
+        src="https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg"
+        alt
+        srcset
+      />
+      <div class="username">
+        <span>{{user.username}}</span>
+        <span>{{user.email}}</span>
+        <span style="margin-top:10px;" v-if="user.isVip===0">
+          非会员
+          <span class="vipno" @click="toPay">点击立即开通</span>
+        </span>
+        <span class="vipyes" v-if="user.isVip!==0">会员</span>
+      </div>
+    </div>
+    <div class="row-around">
+      <span class="my-round" style="background-color:#67C23A;" @click="toMyShare">分享数 {{shareCount}}</span>
+
+      <span class="my-round" style="background-color:#409EFF;" @click="toHome">收藏数 {{collectCount}}</span>
+
+      <span class="my-round" style="background-color:#a18cd1;" @click="toShares">笔记数 {{noteCount}}</span>
+    </div>
     <van-cell-group>
-      <van-cell title="我的账号" :value="user.email" />
+      <!-- <van-cell title="我的账号" :value="user.email" /> -->
+      <van-cell title="标签管理" is-link @click="toTag" />
+      <van-cell title="分享管理" is-link @click="toMyShare" />
+
+      <van-cell title="我的信息" is-link @click="toMyInfo" />
+
       <van-cell title="我的信箱" is-link @click="lookMyMessage" />
 
-      <van-cell @click="toPay" v-if="user.isVip===0" title="是否会员" value="非会员" label="点击立即开通" />
-      <van-cell v-if="user.isVip!==0" title="是否会员" value="是" />
+      <!-- <van-cell @click="toPay" v-if="user.isVip===0" title="是否会员" value="非会员" label="点击立即开通" />
+      <van-cell v-if="user.isVip!==0" title="是否会员" value="是" />-->
       <van-cell title="意见反馈" is-link @click="showFeedBack = true" />
-      <van-cell title="当前版本" :value="versionInfo.version" is-link @click="updateVersion" />
 
       <van-cell title="修改密码" is-link @click="showCPwd = true" />
+      <van-cell title="关于我们" is-link @click="toAbout" />
+      <van-cell title="当前版本" :value="versionInfo.version" is-link @click="updateVersion" />
 
       <!-- <van-cell title="修改密码" is-link arrow-direction="down" /> -->
     </van-cell-group>
@@ -49,7 +79,6 @@
         <div class="replay" v-for="(item,index) in feedBackReplay" :key="index">
           <p>{{index+1}}.我：{{item.content}}</p>
           <div v-if="feedBackReplay[index].reply">
-            312321
             <div v-for="(item1,index1) in feedBackReplay[index].reply" :key="index1">
               <p>回复：{{item1}}</p>
             </div>
@@ -163,6 +192,8 @@ export default {
         if (res.data.code === 200 || res.data.code === 201) {
           console.log(res);
           that.user.isVip = res.data.data.isVip;
+          this.folder = res.data.data.folder;
+          this.getMyNote();
         }
       });
     this.getVersionInfo();
@@ -185,17 +216,70 @@ export default {
       showVersion: false,
       versionInfo: {
         version: "null"
-      }
+      },
+      shareCount: 0,
+      collectCount: 0,
+      noteCount: 0,
+      notes: []
     };
   },
 
   methods: {
+    getMyNote() {
+      var that = this;
+      this.axios
+        .post("/api/getnote", {
+          body: {
+            email: this.$global.user.email
+          }
+        })
+        .then(res => {
+          console.log(res);
+          if (res.data.code === 200) {
+            console.log(res.data.data.note);
+            var notes = res.data.data.note;
+            var folders = that.folder;
+            var needList = [];
+            var collectCount = 0; //收藏数量
+            this.noteCount = notes.length;
+
+            var shareCount = notes.reduce((allcount, next) => {
+              return allcount + next.isShare;
+            }, 0);
+            for (var i = 0; i < folders.length; i++) {
+              var list = [];
+              for (var j = 0; j < notes.length; j++) {
+                if (folders[i] === notes[j].folder) {
+                  notes[j].time = that.parseTime(notes[j].createTime);
+                  list.push(notes[j]);
+                  notes.splice(j, 1);
+                  if (folders[i] === "我的收藏") {
+                    collectCount++;
+                  }
+                }
+              }
+              needList.push(list);
+            }
+            console.log(needList);
+
+            this.shareCount = shareCount;
+            this.collectCount = collectCount;
+            this.$global.user.collectCount = collectCount;
+            if (needList) {
+              that.notes = needList;
+            }
+          }
+        });
+    },
+
     showChangePassword() {
       this.showCPwd = true;
     },
+
     downloadApp(url) {
       window.open("http://cdn.i7code.cn/" + url, "_blank");
     },
+
     getVersionInfo() {
       this.axios
         .post("/api/version", {
@@ -205,14 +289,17 @@ export default {
           }
         })
         .then(res => {
-          res.data.result.time = this.parseTime(res.data.result.createTime);
-          this.versionInfo = res.data.result;
-        });
-    },
+          var list = res.data.data.list;
+          console.log(list);
+          if (list.length > 0) {
+            list.sort((a, b) => {
+              return b.createTime - a.createTime;
+            });
+            this.versionInfo = list[0];
 
-    updateVersion() {
-      this.showVersion = true;
-      this.getVersionInfo();
+            this.versionInfo.time = this.parseTime(this.versionInfo.createTime);
+          }
+        });
     },
 
     parseTime(time) {
@@ -259,9 +346,42 @@ export default {
           }
         });
     },
+
+    toAbout() {
+      this.$router.push("/about");
+    },
+
+    toTag() {
+      this.$router.push("/mytag");
+    },
+
+    toHome() {
+      this.$router.push("/home");
+    },
+
+    toShares() {
+      this.$router.push("/shares");
+    },
+
+    updateVersion() {
+      this.$router.push("/version");
+
+      // this.showVersion = true;
+      // this.getVersionInfo();
+    },
+
+    toMyInfo() {
+      this.$router.push("/myinfo");
+    },
+
+    toMyShare() {
+      this.$router.push("/myshare");
+    },
+
     exit() {
       this.$router.push("/login");
     },
+
     conformPay() {
       this.isPay = true;
       this.axios
@@ -353,11 +473,46 @@ export default {
   padding-bottom: 20px;
 }
 
+.avator {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+}
+
+.top-row {
+  display: flex;
+  flex-direction: row;
+  padding-bottom: 20px;
+  margin: 10px 20px 20px 20px;
+  border-bottom: 1px solid #ececec;
+}
+
+.username {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 20px;
+}
+
 .center-pay {
   display: flex;
   justify-content: center;
   align-items: center;
   margin-bottom: 8px;
+}
+
+.row-around {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #ececec;
+}
+
+.my-round {
+  padding: 12px;
+  border-radius: 2px;
+  color: #fff;
 }
 
 .row-center {
@@ -366,15 +521,18 @@ export default {
   align-items: center;
   padding: 10px;
 }
+
 .replay {
   border-bottom: 1px solid #ececec;
   padding-left: 10px;
 }
+
 .replay-model {
   width: 80%;
   height: 40%;
   border-radius: 10px;
 }
+
 .pawd {
   width: 280px;
   height: 220px;
@@ -392,6 +550,7 @@ export default {
   padding-left: 10px;
   padding-top: 20px;
 }
+
 .right {
   display: flex;
   justify-content: flex-end;
@@ -399,8 +558,24 @@ export default {
   flex: 1;
   padding-top: 20px;
 }
+
 #money {
   font-size: 34px;
   font-weight: 800;
+}
+
+.vipno {
+  color: #409eff;
+  font-weight: 600;
+  padding-top: 20px;
+}
+
+.vipyes {
+  width: 43px;
+  margin-top: 10px;
+  background-color: #67c23a;
+  color: #fff;
+  font-weight: 600;
+  padding-left: 4px;
 }
 </style>

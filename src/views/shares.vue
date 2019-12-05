@@ -1,16 +1,24 @@
 <template>
-  <div>
-    <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 笔记广场</van-row>
-    <van-cell v-if="notes.length===0" title="当前暂无记事本分享" />
+  <div class="page">
+    <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 最新</van-row>
+    <!-- <van-cell v-if="notes.length===0" title="当前暂无记事本分享" /> -->
+    <div class="content">
+      <div class="title">最近编辑</div>
+      <van-cell v-if="myNotes.length===0" title="最近未编辑" />
 
-    <div v-for="(item,index) in notes" :key="index">
-      <van-swipe-cell>
+      <div v-for="(item) in myNotes" :key="item.createTime" class="border">
         <van-cell @click="lookDetail(item)" :title="item.content.title" :value="item.time" />
-        <template slot="right">
-          <van-button square type="default" :text="item.email+'分享'" />
-          <van-button @click="collectNote(item)" square type="primary" text="收藏" />
-        </template>
-      </van-swipe-cell>
+      </div>
+      <!-- <div class="title">最新分享</div>
+      <div v-for="(item,index) in notes" :key="index">
+        <van-swipe-cell>
+          <van-cell @click="lookDetail(item)" :title="item.content.title" :value="item.time" />
+          <template slot="right">
+            <van-button square type="default" :text="item.email+'分享'" />
+            <van-button @click="collectNote(item)" square type="primary" text="收藏" />
+          </template>
+        </van-swipe-cell>
+      </div>-->
     </div>
   </div>
 </template>
@@ -42,6 +50,14 @@ export default {
   created() {
     console.log("created");
     this.getNote();
+    this.getMyNote();
+  },
+
+  data() {
+    return {
+      notes: [],
+      myNotes: []
+    };
   },
   methods: {
     collectNote(item) {
@@ -56,7 +72,10 @@ export default {
             Toast("非会员收藏上限为20");
             return;
           }
-          if (this.$global.user.collectCount >= 50 && !this.$global.user.isVip) {
+          if (
+            this.$global.user.collectCount >= 50 &&
+            !this.$global.user.isVip
+          ) {
             Toast("会员收藏上限为50");
             return;
           }
@@ -168,15 +187,56 @@ export default {
             that.folder = res.data.data.folder;
           }
         });
+    },
+
+    getMyNote() {
+      var that = this;
+      this.axios
+        .post("/api/getnote", {
+          body: {
+            email: this.$global.user.email
+          }
+        })
+        .then(res => {
+          console.log(res);
+          if (res.data.code === 200) {
+            var notes = res.data.data.note;
+            if (notes.length > 5) {
+              notes.sort((a, b) => {
+                return b.createTime - a.createTime;
+              });
+              notes = notes.slice(0, 5);
+              console.log(notes);
+            }
+            that.myNotes = notes;
+          }
+        });
     }
-  },
-  data() {
-    return {
-      notes: []
-    };
   }
 };
 </script>
 <style  scoped>
+.page {
+  background-color: #ececec;
+  min-height: 607px;
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+}
+.content {
+  margin: 0 4px;
+  border-radius: 10px;
+  border: 1px solid #ececec;
+}
+.title {
+  background-color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 10px;
+  margin-top: 4px;
+  border-bottom: 1px solid #999;
+}
+.border {
+  border-bottom: 1px solid #ececec;
+}
 </style>
 

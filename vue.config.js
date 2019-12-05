@@ -1,7 +1,6 @@
 
 module.exports = {
     publicPath: './',
-    
     devServer: {
         proxy: {//配置跨域
             '/api': {

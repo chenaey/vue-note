@@ -1,6 +1,6 @@
 <template>
   <div>
-    <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 首页</van-row>
+    <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 我的笔记</van-row>
     <van-row type="flex" justify="space-around">
       <van-col>
         <van-button type="default" size="small" @click="showModel">创建新的文件夹</van-button>
@@ -64,6 +64,7 @@
         </van-collapse>
       </van-collapse-item>
     </van-collapse>
+
     <van-popup v-model="show" class="model">
       <van-field v-model="newFolderName" maxlength="10" label="创建文件夹" placeholder="输入文件夹名称" />
       <van-button class="center" type="primary" size="small" @click="conformAddFolder">确定创建</van-button>
@@ -78,7 +79,7 @@
         <div class="row-center">
           <span>将该记事本发送给好友</span>
         </div>
-        <van-field v-model="email" maxlength="12" label="发送给" placeholder="请输入对方邮箱" />
+        <van-field v-model="email"  label="发送给" placeholder="请输入对方邮箱" />
       </div>
       <div v-if="isSend" class="center-pay">
         <van-loading size="24px">正在发送...</van-loading>
@@ -106,7 +107,8 @@ import {
   Notify,
   ActionSheet,
   Dialog,
-  SwipeCell
+  SwipeCell,
+  Search
 } from "vant";
 
 Vue.use(Collapse)
@@ -115,6 +117,7 @@ Vue.use(Collapse)
   .use(Notify)
   .use(Dialog)
   .use(SwipeCell)
+  .use(Search)
   .use(ActionSheet);
 
 export default {
@@ -124,6 +127,10 @@ export default {
       type: "get",
       email: this.$global.user.email
     };
+    console.log("#############");
+    console.log(this.$global.user);
+    console.log("#############");
+
     this.axios
       .post("/api/operatorUser", {
         body: body
@@ -141,7 +148,7 @@ export default {
       var date = new Date(time);
       var Y = date.getFullYear();
       var M = date.getMonth() + 1;
-      var D = date.getDate();
+      var D = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
       var h = date.getHours() < 10 ? "0" + date.getHours() : date.getHours();
       var m =
         date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes();
@@ -228,17 +235,20 @@ export default {
           console.log(res);
           if (res.data.code === 200) {
             console.log(res.data.data.note);
+            console.log(res.data.data.note.length);
+
             var notes = res.data.data.note;
             var folders = that.folder;
             var needList = [];
             var collectCount = 0; //收藏数量
+
             for (var i = 0; i < folders.length; i++) {
               var list = [];
               for (var j = 0; j < notes.length; j++) {
                 if (folders[i] === notes[j].folder) {
                   notes[j].time = that.parseTime(notes[j].createTime);
                   list.push(notes[j]);
-                  notes.splice(j, 1);
+                  // notes.splice(j, 1);
                   if (folders[i] === "我的收藏") {
                     collectCount++;
                   }
@@ -429,7 +439,8 @@ export default {
       isSend: false,
       email: undefined,
       folder: ["我的记事本"],
-      actions: [{ name: "删除" }, { name: "重命名" }]
+      actions: [{ name: "删除" }, { name: "重命名" }],
+      searchValue: undefined
     };
   }
 };

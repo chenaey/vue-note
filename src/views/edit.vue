@@ -1,28 +1,67 @@
 <template>
   <div class="edit bg-edit">
     <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 新增记事</van-row>
+    <van-row type="flex" justify="space-around" style="margin-top:10px;">
+      <van-col>
+        <van-button size="small" @click="conformCancle">重新编辑</van-button>
+      </van-col>
+      <van-col>
+        <van-button type="primary" size="small" @click="conformSave">保存</van-button>
+      </van-col>
+    </van-row>
 
     <van-cell-group>
-      <van-field class="bg-edit" v-model="title" maxlength="30" placeholder="在这里输入标题,最多30个字符" />
-      <van-field
-        v-model="message"
-        rows="1"
-        autosize
-        class="bg-edit"
-        type="textarea"
-        placeholder="又是美好的一天,写点东西吧~"
-        maxlength="2048"
-        show-word-limit
-      />
-      <van-field class="bg-edit" v-model="tagString" placeholder="自定义标签 以空格间隔 " />
+      <div class="title">
+        <van-field class="bg-edit" v-model="title" maxlength="30" placeholder="在这里输入标题,最多30个字符" />
+      </div>
+      <div class="message">
+        <van-field
+          v-model="message"
+          rows="10"
+          autosize
+          class="bg-edit"
+          type="textarea"
+          placeholder="又是美好的一天,写点东西吧~"
+          maxlength="2048"
+          show-word-limit
+        />
+      </div>
     </van-cell-group>
-
-    <div class="row">
-      <div v-for="(item,index) in tagList" :key="index">
-        <van-tag style="margin-right:4px;" type="success">{{item}}</van-tag>
+    <div class="tags">
+      <el-tag
+        :key="tag"
+        class="eachtag"
+        v-for="tag in tagList"
+        closable
+        :disable-transitions="false"
+        @close="handleClose(tag)"
+      >{{tag}}</el-tag>
+      <el-input
+        class="input-new-tag"
+        v-if="inputVisible"
+        v-model="inputValue"
+        ref="saveTagInput"
+        size="small"
+        @keyup.enter.native="handleInputConfirm"
+        @blur="handleInputConfirm"
+      ></el-input>
+      <el-button v-else class="button-new-tag" size="small" @click="showInput">+ 新标签</el-button>
+      <div v-if="publicTagList.length>0">
+        <div class="my-title">便捷标签</div>
+        <div class="row">
+          <div
+            v-for="(item,index) in publicTagList"
+            v-bind:key="index"
+            class="each"
+            @click="addPublicTag(item)"
+          >
+            <van-tag size="medium" type="success">{{item}}</van-tag>
+          </div>
+        </div>
       </div>
     </div>
-    <h2 class="tip" @click="showTypeAction">
+
+    <h2 class="tip tags" @click="showTypeAction">
       当前为
       <span>{{selectName}}</span>(点击切换)
     </h2>
@@ -48,19 +87,11 @@
         accept="video/*"
         capture="user"
       />
-      <!-- <van-uploader class="bg-edit imgs" upload-text="123213213" :after-read="afterReadVideo"></van-uploader> -->
     </div>
-    <!-- <van-uploader :before-read="afterReadVideo" :max-size="maxSize">
-      <van-button icon="video" size="small" type="primary">添加视频</van-button>
-    </van-uploader>-->
 
     <van-row type="flex" justify="space-around">
       <van-col>
         <van-button class="bg-edit" type="default" size="small" @click="showAction">保存至:{{savePath}}</van-button>
-      </van-col>
-
-      <van-col>
-        <van-button type="primary" size="small" @click="conformSave">确定保存</van-button>
       </van-col>
     </van-row>
     <van-action-sheet v-model="showType" :actions="actionType" @select="onSelectType" />
@@ -86,7 +117,6 @@ Vue.use(Toast)
 
 export default {
   created() {
-    console.log("created");
     console.log(this.$global.user);
     var body = {
       type: "get",
@@ -100,6 +130,7 @@ export default {
       .then(res => {
         if (res.data.code === 200 || res.data.code === 201) {
           console.log(res.data.data);
+          this.publicTagList = res.data.data.tagList;
           console.log(res.data.data.folder);
           this.actions = res.data.data.folder.map(name => {
             return {
@@ -110,18 +141,17 @@ export default {
       });
   },
   watch: {
-    tagString() {
-      if (this.tagString === "") {
-        return;
-      }
-
-      this.tagList = this.tagString.split(" ");
-      if (this.$global.user.isVip === 0 && this.tagList.length > 10) {
-        Toast("非Vip仅支持10个标签");
-        this.tagList = this.tagList.splice(0, 10);
-        return;
-      }
-    }
+    // tagString() {
+    //   if (this.tagString === "") {
+    //     return;
+    //   }
+    //   this.tagList = this.tagString.split(" ");
+    //   if (this.$global.user.isVip === 0 && this.tagList.length > 10) {
+    //     Toast("非Vip仅支持10个标签");
+    //     this.tagList = this.tagList.splice(0, 10);
+    //     return;
+    //   }
+    // }
   },
   data() {
     return {
@@ -145,11 +175,40 @@ export default {
       videoFile: "",
       fileListSuccess: 0, //上传成功数量
       percent: 0,
-      uploadImgKey: [] //上传图片成功后返回的key
+      uploadImgKey: [], //上传图片成功后返回的key
+      inputVisible: false,
+      inputValue: "",
+      publicTagList: [] //便捷标签
     };
   },
 
   methods: {
+    addPublicTag(name) {
+      if (!this.tagList.includes(name)) this.tagList.push(name);
+    },
+    handleClose(tag) {
+      this.tagList.splice(this.tagList.indexOf(tag), 1);
+    },
+
+    showInput() {
+      this.inputVisible = true;
+      // this.$nextTick( => {
+      //   this.$refs.saveTagInput.$refs.input.focus();
+      // });
+    },
+
+    handleInputConfirm() {
+      let inputValue = this.inputValue;
+      if (this.$global.user.isVip === 0 && this.tagList.length >= 10) {
+        Toast("非Vip仅支持10个标签");
+        return;
+      }
+      if (inputValue) {
+        this.tagList.push(inputValue);
+      }
+      this.inputVisible = false;
+      this.inputValue = "";
+    },
     //获取上传凭证token
     getUpLoadToken() {
       this.axios
@@ -228,8 +287,15 @@ export default {
       return true;
     },
 
+    conformCancle() {
+      this.title = undefined;
+      this.tagList = [];
+      this.tagString = "";
+      this.message = "";
+    },
+
     conformSave() {
-      Toast("正在上传数据 请勿离开此页面");
+      Toast({ message: "正在上传数据 请勿离开此页面", duration: 1000 });
       if (this.title.length <= 0) {
         Notify({ type: "danger", message: "标题不能为空" });
         return;
@@ -472,14 +538,28 @@ export default {
   min-height: 500px;
   background: #ddd;
 }
+
 .bg-edit {
-  background-color: #fffcf6;
+  background-color: #fff;
+}
+.each {
+  margin: 10px 5px;
 }
 .add-btn {
   float: right;
   padding-top: 10px;
   padding-right: 20px;
 }
+
+.margin {
+  margin: 0 30px;
+}
+
+.title {
+  margin: 10px 30px;
+  border: 1px solid #999;
+}
+/* 545c64 */
 
 .row {
   display: flex;
@@ -493,13 +573,58 @@ export default {
   justify-content: center;
   align-items: center;
 }
+.message {
+  margin: 10px 30px;
+  border: 1px solid #999;
+}
 
+.tag {
+  margin: 10px 30px;
+  padding: 4px 10px;
+  border: 1px solid #999;
+}
+.my-title {
+  background-color: #fff;
+  font-size: 16px;
+  padding: 4px;
+  margin-top: 6px;
+  border-bottom: 1px solid #ececec;
+}
 .tip {
   font-size: 14px;
   color: rgba(69, 90, 100, 0.6);
   padding: 10px 15px 15px;
 }
+
 .videoBtn {
   padding: 6px;
+}
+
+.eachtag {
+  margin-bottom: 5px;
+}
+
+.tags {
+  border: 1px solid #999;
+  margin: 10px 30px;
+  padding: 10px 5px;
+}
+
+.el-tag + .el-tag {
+  margin-left: 10px;
+}
+
+.button-new-tag {
+  margin-left: 10px;
+  height: 32px;
+  line-height: 30px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.input-new-tag {
+  width: 90px;
+  margin-left: 10px;
+  vertical-align: bottom;
 }
 </style>

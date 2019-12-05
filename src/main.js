@@ -5,6 +5,7 @@ import 'vant/lib/index.css';
 import './plugins/axios'
 
 import { Button, Row, Col, Cell, CellGroup, Icon, Field, AddressEdit, Toast, Tag, ActionSheet } from 'vant'
+import './plugins/element.js'
 
 Vue.use(Button).use(Row).use(Col).use(Cell).use(CellGroup).use(Icon).use(Field).use(AddressEdit).use(Toast).use(Tag).use(ActionSheet);
 Vue.config.productionTip = false
@@ -13,7 +14,11 @@ Vue.config.productionTip = false
 
 
 Vue.prototype.$global = {
-  appName: "记事本", user: {
+  baseUrl: "http://127.0.0.1:8002/",
+  downloadUrl: "http://cdn.i7code.cn/",
+  downloadUrl1: "http://note.i7code.cn/file/",
+  appName: "记事本",
+  user: {
     email: "1@qq.com",
     isVip: 0,
   },

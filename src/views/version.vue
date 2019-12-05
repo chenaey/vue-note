@@ -1,0 +1,135 @@
+<template>
+  <div class="about">
+    <van-row type="flex" class="padding topBg" justify="center">
+      <span class="left" @click="back">返回</span>
+      {{this.$global.appName}} 版本信息
+    </van-row>
+    <div class="col">
+      <img
+        class="logo"
+        src="https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1575201131698&di=7c065894cc54634602345e5f6c3f82ad&imgtype=0&src=http%3A%2F%2Fimg.zcool.cn%2Fcommunity%2F01a36257c2f4aa0000018c1b9ee60b.JPG%401280w_1l_2o_100sh.jpg"
+      />
+      <span class="blod-text">记事本 Note</span>
+      <span class="version-info">Version {{versionInfo.version}}</span>
+      <span class="version-info">{{versionInfo.description}}</span>
+      <span class="version-info">{{versionInfo.time}}</span>
+
+      <div class="center-pay" style="margin-top:10px;">
+        <van-button
+          :disabled="!versionInfo.url"
+          class="center"
+          type="primary"
+          size="small"
+          @click="downloadApp(versionInfo.url)"
+        >下载该版本</van-button>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>Note 版权所有</span>
+      <span>Copyright © 2018-2019 Note</span>
+      <span>All Rights Reserved</span>
+    </div>
+  </div>
+</template>
+<script>
+export default {
+  created() {
+    this.getVersionInfo();
+  },
+
+  data() {
+    return {
+      versionInfo: {}
+    };
+  },
+  methods: {
+    back() {
+      this.$router.go(-1);
+    },
+
+    downloadApp(url) {
+      console.log(url);
+      window.open(this.$global.downloadUrl + url, "_blank");
+    },
+    
+    parseTime(time) {
+      var date = new Date(time);
+      var Y = date.getFullYear();
+      var M = date.getMonth() + 1;
+      var D = date.getDate();
+      var h = date.getHours() < 10 ? "0" + date.getHours() : date.getHours();
+      var m =
+        date.getMinutes() < 10 ? "0" + date.getMinutes() : date.getMinutes();
+      return `${Y}/${M}/${D} ${h}:${m}`;
+    },
+
+    getVersionInfo() {
+      this.axios
+        .post("/api/version", {
+          body: {
+            type: "get",
+            email: this.$global.user.email
+          }
+        })
+        .then(res => {
+          var list = res.data.data.list;
+          console.log(list);
+          if (list.length > 0) {
+            list.sort((a, b) => {
+              return b.createTime - a.createTime;
+            });
+            this.versionInfo = list[0];
+            this.versionInfo.time = this.parseTime(this.versionInfo.createTime);
+          }
+        });
+    }
+  }
+};
+</script>>
+
+
+<style scoped>
+.topBg {
+  background-color: #fff;
+}
+.col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 60px;
+}
+.bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 170px;
+}
+.blod-text {
+  margin-top: 20px;
+  font-weight: 700;
+  font-size: 24px;
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+}
+
+.logo {
+  width: 86px;
+  height: 86px;
+}
+
+.left {
+  position: absolute;
+  left: 20px;
+  color: black;
+}
+
+.version-info {
+  margin-top: 10px;
+  font-size: 14px;
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
+}
+.bottom {
+  color: #909399;
+}
+</style>
