@@ -19,9 +19,29 @@
       <el-table-column prop="email" label="注册邮箱" width="120"></el-table-column>
       <!-- <el-table-column prop="password" label="用户密码" width="120"></el-table-column> -->
       <el-table-column prop="isVipText" label="是否会员" width="60"></el-table-column>
-      <el-table-column prop="userInfo.username" label="用户名" width="80"></el-table-column>
+
+      <el-table-column prop="userInfo.username" label="用户名" width="80">
+        <template slot-scope="{row,$index}">
+          <el-input size="mini" v-if="showEdit[$index]" v-model="row.userInfo.username"></el-input>
+          <span v-if="!showEdit[$index]">{{row.userInfo.username}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="userInfo.year" label="年龄" width="70">
+        <template slot-scope="{row,$index}">
+          <el-input size="mini" v-if="showEdit[$index]" v-model="row.userInfo.year"></el-input>
+          <span v-if="!showEdit[$index]">{{row.userInfo.year}}</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="userInfo.where" label="地区" width="70">
+        <template slot-scope="{row,$index}">
+          <el-input size="mini" v-if="showEdit[$index]" v-model="row.userInfo.where"></el-input>
+          <span v-if="!showEdit[$index]">{{row.userInfo.where}}</span>
+        </template>
+      </el-table-column>
+
+      <!-- <el-table-column prop="userInfo.username" label="用户名" width="80"></el-table-column>
       <el-table-column prop="userInfo.year" label="年龄" width="70"></el-table-column>
-      <el-table-column prop="userInfo.where" label="地区" width="70"></el-table-column>
+      <el-table-column prop="userInfo.where" label="地区" width="70"></el-table-column>-->
 
       <el-table-column prop="safeKey" label="安全码" width="100">
         <template slot-scope="{row,$index}">
@@ -43,8 +63,8 @@
             v-if="showEdit[scope.$index]"
             type="success"
             size="small"
-            @click.native="handleCancel(scope.$index, scope.row)"
-          >完成</el-button>
+            @click.native="handleSave(scope.$index, scope.row)"
+          >保存</el-button>
           <el-button
             v-if="scope.row.isVip"
             size="mini"
@@ -131,17 +151,16 @@ export default {
     handleEdit(index, row) {
       this.showEdit = [];
       this.showBtn = [];
-      console.log(index);
-      console.log(row);
+
       this.isautofocus = true;
       this.showEdit[index] = true;
       this.showBtn[index] = true;
-      this.tempValue = row.safeKey;
+      this.tempValue = row;
       this.$set(this.showEdit, row, true);
       this.$set(this.showBtn, row, true);
     },
     //取消编辑
-    handleCancel(index, row) {
+    handleSave(index, row) {
       var that = this;
       console.log(row);
       that.showEdit[index] = false;
@@ -152,32 +171,51 @@ export default {
       console.log(this.showBtn);
       this.showEdit = [];
       this.showBtn = [];
+
       if (row.safeKey.length < 3) {
         this.$message({
-          message: "修改失败安全码不能低于3位数",
+          message: "修改失败:安全码不能低于3位数",
           type: "error"
         });
-        this.users[index].safeKey = this.tempValue;
+        this.users[index].safeKey = this.tempValue.safeKey;
         this.tempValue = "";
         return;
       }
       this.axios
         .post("/api/operatorUser", {
           body: {
-            type: "changeSafeKey",
+            type: "changeInfo",
             email: row.email,
-            password: row.password,
+            userInfo: row.userInfo,
             safeKey: row.safeKey
           }
         })
         .then(res => {
-          console.log(res);
-
-          that.$message({
-            message: res.data.data.message,
-            type: "success"
-          });
+          if (res.data.code === 200 || res.data.code === 201) {
+            console.log(res);
+            that.$message({
+              message: res.data.message,
+              type: "success"
+            });
+          }
         });
+      // this.axios
+      //   .post("/api/operatorUser", {
+      //     body: {
+      //       type: "changeSafeKey",
+      //       email: row.email,
+      //       password: row.password,
+      //       safeKey: row.safeKey
+      //     }
+      //   })
+      //   .then(res => {
+      //     console.log(res);
+
+      //     that.$message({
+      //       message: res.data.data.message,
+      //       type: "success"
+      //     });
+      //   });
     },
 
     getUserss() {
