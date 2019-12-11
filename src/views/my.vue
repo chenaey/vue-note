@@ -177,6 +177,17 @@ Vue.use(Toast)
   .use(Notify);
 
 export default {
+  watch: {
+    password() {
+      this.password = this.password.replace(/[\u4e00-\u9fa5]/gi, "");
+    },
+    newPassword() {
+      this.newPassword = this.newPassword.replace(/[\u4e00-\u9fa5]/gi, "");
+    },
+    surePassword() {
+      this.surePassword = this.surePassword.replace(/[\u4e00-\u9fa5]/gi, "");
+    }
+  },
   created() {
     var that = this;
     console.log("created");

@@ -26,15 +26,21 @@
           <span v-if="!showEdit[$index]">{{row.userInfo.username}}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="userInfo.year" label="年龄" width="70">
+      <el-table-column prop="userInfo.year" label="年龄" width="90">
         <template slot-scope="{row,$index}">
-          <el-input size="mini" v-if="showEdit[$index]" v-model="row.userInfo.year"></el-input>
+          <el-input
+            type="number"
+            maxlength="3"
+            size="mini"
+            v-if="showEdit[$index]"
+            v-model="row.userInfo.year"
+          ></el-input>
           <span v-if="!showEdit[$index]">{{row.userInfo.year}}</span>
         </template>
       </el-table-column>
       <el-table-column prop="userInfo.where" label="地区" width="70">
         <template slot-scope="{row,$index}">
-          <el-input size="mini" v-if="showEdit[$index]" v-model="row.userInfo.where"></el-input>
+          <el-input type="text" size="mini" v-if="showEdit[$index]" v-model="row.userInfo.where"></el-input>
           <span v-if="!showEdit[$index]">{{row.userInfo.where}}</span>
         </template>
       </el-table-column>
@@ -86,7 +92,7 @@
     </el-table>
 
     <van-popup v-model="show" class="model">
-      <van-field v-model="email" label="注册邮箱" placeholder="输入注册邮箱" />
+      <van-field v-model="email" label="注册邮箱" :errMsg="errMsg" placeholder="输入注册邮箱" />
       <van-field v-model="password" maxlength="12" label="注册密码" placeholder="输入注册密码" />
 
       <van-button class="center" type="primary" size="small" @click="toLogin">确定创建</van-button>
@@ -121,6 +127,21 @@ Vue.use(Collapse)
   .use(ActionSheet);
 
 export default {
+  watch: {
+    password() {
+      this.password = this.password.replace(/[\u4e00-\u9fa5]/gi, "");
+    },
+    email() {
+      var inputEmail = this.email;
+      var reg = /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/;
+      this.email = this.email.replace(/[\u4e00-\u9fa5]/gi, "");
+      if (!reg.test(inputEmail)) {
+        this.errMsg = "邮箱格式错误";
+      } else {
+        this.errMsg = "";
+      }
+    }
+  },
   created() {
     this.getUserss();
   },
@@ -171,10 +192,19 @@ export default {
       console.log(this.showBtn);
       this.showEdit = [];
       this.showBtn = [];
-
+      
       if (row.safeKey.length < 3) {
         this.$message({
           message: "修改失败:安全码不能低于3位数",
+          type: "error"
+        });
+        this.users[index].safeKey = this.tempValue.safeKey;
+        this.tempValue = "";
+        return;
+      }
+      if (/.*[\u4e00-\u9fa5]+.*$/.test(row.safeKey)) {
+        this.$message({
+          message: "修改失败:安全码包含非法字符:中文",
           type: "error"
         });
         this.users[index].safeKey = this.tempValue.safeKey;

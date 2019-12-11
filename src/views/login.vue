@@ -52,11 +52,15 @@ export default {
     email() {
       var inputEmail = this.email;
       var reg = /^(\w-*\.*)+@(\w-?)+(\.\w{2,})+$/;
+      this.email = this.email.replace(/[\u4e00-\u9fa5]/gi, "");
       if (!reg.test(inputEmail)) {
         this.errMsg = "邮箱格式错误";
       } else {
         this.errMsg = "";
       }
+    },
+    password() {
+      this.password = this.password.replace(/[\u4e00-\u9fa5]/gi, "");
     }
   },
 

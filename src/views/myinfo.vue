@@ -20,7 +20,7 @@
     </div>
 
     <van-cell-group v-if="user.userInfo">
-      <van-field v-model="safeKey" label="安全码" placeholder="安全码" maxlength="10" />
+      <van-field v-model="safeKey" label="安全码" type="text" placeholder="安全码" maxlength="10" />
 
       <van-field v-model="userInfo.username" label="用户名" placeholder="用户名" maxlength="10" />
       <van-field
@@ -45,6 +45,11 @@ import { Toast, Area } from "vant";
 Vue.use(Area).use(Toast);
 
 export default {
+  watch: {
+    safeKey() {
+      this.safeKey = this.safeKey.replace(/[\u4e00-\u9fa5]/gi, "");
+    }
+  },
   created() {
     console.log("created");
     this.user = this.$global.user;
