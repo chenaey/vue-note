@@ -9,7 +9,9 @@ import axios from "axios";
 axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
 let config = {
-  baseURL: "http://note.i7code.cn/"
+  // baseURL: "http://note.i7code.cn/"
+
+  // baseURL: "http://106.15.200.252/" //线上部署使用 本地运行注释掉
   // baseURL: process.env.baseURL || process.env.apiUrl || ""
   // timeout: 60 * 1000, // Timeout
 };

@@ -13,10 +13,11 @@ Vue.config.productionTip = false
 
 
 
+
 Vue.prototype.$global = {
   baseUrl: "http://127.0.0.1:8002/",
   downloadUrl: "http://cdn.i7code.cn/",
-  downloadUrl1: "http://note.i7code.cn/file/",
+  downloadUrl1: "http://106.15.200.252/file/",
   appName: "记事本",
   user: {
     email: "1@qq.com",

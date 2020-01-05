@@ -1,6 +1,25 @@
 <template>
   <div>
     <van-row type="flex" class="padding topBg" justify="center">{{this.$global.appName}} 我的笔记</van-row>
+    <form action="/">
+      <van-search
+        v-model="searchValue"
+        placeholder="输入关键字搜索笔记"
+        @search="onSearch"
+        @cancel="onCancel"
+      />
+    </form>
+    <van-cell style="margin-left:10px;" v-if="searchNote.length!==0" title="搜索结果" />
+    <div class="search">
+      <div
+        v-for="(item,index) in searchNote"
+        v-bind:key="index"
+        class="eachnote"
+        @click="lookDetail(item)"
+      >
+        <div class="title">{{item.content.title}}</div>
+      </div>
+    </div>
     <van-row type="flex" justify="space-around">
       <van-col>
         <van-button type="default" size="small" @click="showModel">创建新的文件夹</van-button>
@@ -79,7 +98,7 @@
         <div class="row-center">
           <span>将该记事本发送给好友</span>
         </div>
-        <van-field v-model="email"  label="发送给" placeholder="请输入对方邮箱" />
+        <van-field v-model="email" label="发送给" placeholder="请输入对方邮箱" />
       </div>
       <div v-if="isSend" class="center-pay">
         <van-loading size="24px">正在发送...</van-loading>
@@ -343,6 +362,27 @@ export default {
           }
         });
     },
+
+    onSearch() {
+      console.log(this.searchValue);
+      var res = [];
+      var notes = this.notes;
+      for (var i = 0; i < notes.length; i++) {
+        var a = notes[i].filter(list => {
+          return (
+            list.content.text.includes(this.searchValue) ||
+            list.content.title.includes(this.searchValue)
+          );
+        });
+        console.log(a);
+
+        if (a.length > 0) res = res.concat(a);
+      }
+      this.searchNote = res;
+      console.log(this.searchNote);
+    },
+
+    onCancel() {},
     onSelect(item, index) {
       var that = this;
       console.log(item, index);
@@ -440,7 +480,8 @@ export default {
       email: undefined,
       folder: ["我的记事本"],
       actions: [{ name: "删除" }, { name: "重命名" }],
-      searchValue: undefined
+      searchValue: undefined,
+      searchNote: []
     };
   }
 };
@@ -481,6 +522,16 @@ export default {
   width: 280px;
   height: 150px;
   border-radius: 10px;
+}
+.search {
+  margin: 20px;
+}
+.eachnote {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ececee;
+  border-top: 1px solid #ececee;
 }
 </style>
 

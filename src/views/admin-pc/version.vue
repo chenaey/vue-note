@@ -72,7 +72,7 @@ export default {
               headers: {
                 "Content-Type": "multipart/form-data"
               },
-              data: formdata
+              data: 8
             })
               .then(res => {
                 console.log(res);
